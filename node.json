@@ -1,0 +1,102 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "field": "video_key"
+      },
+      "id": "remove-duplicates",
+      "name": "Ensure Single Download",
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 1,
+      "position": [
+        980,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "bucketName": "videos-to-process",
+        "operation": "download",
+        "fileKey": "={{ $json.video_key }}"
+      },
+      "id": "s3-download-unique",
+      "name": "S3: Download Video (Once)",
+      "type": "n8n-nodes-base.s3",
+      "typeVersion": 1,
+      "position": [
+        1180,
+        340
+      ],
+      "credentials": {
+        "s3": {
+          "id": "YOUR_S3_CREDENTIAL_ID",
+          "name": "S3 account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fileName": "=/tmp/source_{{ $json.video_key.trim() }}",
+        "dataPropertyName": "data"
+      },
+      "id": "write-temp-unique",
+      "name": "Write Temp (Once)",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        1380,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationType": "crossJoin",
+        "output": "input1"
+      },
+      "id": "merge-data-file",
+      "name": "Merge Data & File",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1600,
+        140
+      ]
+    }
+  ],
+  "connections": {
+    "Ensure Single Download": {
+      "main": [
+        [
+          {
+            "node": "S3: Download Video (Once)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "S3: Download Video (Once)": {
+      "main": [
+        [
+          {
+            "node": "Write Temp (Once)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Temp (Once)": {
+      "main": [
+        [
+          {
+            "node": "Merge Data & File",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    }
+  }
+}
